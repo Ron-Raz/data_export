@@ -1,10 +1,13 @@
 # Objective
+
 List of items that are typically required to be exported to external systems for compliance.
 
 # List of Event Attendees
-For this we will be using the [report.getTable](https://developer.kaltura.com/api-docs/service/report/action/getTable) API call, with the ```TOP_USERS_WEBCAST``` as the report type.
+
+For this we will be using the [report.getTable](https://developer.kaltura.com/api-docs/service/report/action/getTable) API call, with the `TOP_USERS_WEBCAST` as the report type.
 
 The following code retrieves the list of attendees for the live entry ID 1_nqhohx5m.
+
 ```python
 report_type = KalturaReportType.TOP_USERS_WEBCAST
 report_input_filter = KalturaReportInputFilter()
@@ -22,6 +25,7 @@ for row in result.data.split(';'):
 ```
 
 The result in this case is:
+
 ```
 user_id,user_name,registered,count_loads,count_plays,sum_view_period,sum_live_view_period,avg_live_buffer_time,total_completion_rate,live_engaged_users_play_time_ratio
 ron.raz.inc@gmail.com,Foo Bar,0,5,5,45.833333333333,45.833333333333,2.1454545584592E-5,0,0
@@ -43,6 +47,7 @@ print('Moderators:',result.entitledUsersView)
 ```
 
 The result in this case is a list of groups (Producers, and WebcastingAdmin) and users:
+
 ```
 Co-Editors: Producers,ron.raz@kaltura.com
 Co-Publishers: Producers
@@ -109,7 +114,7 @@ Define custom metadata for LoB Sponsor and Details and query it in the same meth
 
 To get the real date and time in which the live event started, we will use the [media.get](https://developer.kaltura.com/api-docs/service/media/action/get) API call with the live entry ID as the parameter.
 
-Assuming that the encoder streams the live broadcast in one session, we will use ```firstBroadcast``` for the live start time, and ```lastBroadcastEndTime``` for the live end time:
+Assuming that the encoder streams the live broadcast in one session, we will use `firstBroadcast` for the live start time, and `lastBroadcastEndTime` for the live end time:
 
 ```python
 result = client.media.get('1_5ri75c3b', -1)
