@@ -104,12 +104,6 @@ In this case, the result is:
 </metadata>
 ```
 
-# LoB Sponsor and Details
-
-**TBD**
-
-Define custom metadata for LoB Sponsor and Details and query it in the same method as above.
-
 # Live Start and End Times
 
 To get the real date and time in which the live event started, we will use the [media.get](https://developer.kaltura.com/api-docs/service/media/action/get) API call with the live entry ID as the parameter.
@@ -127,4 +121,50 @@ In this case the result is:
 ```
 firstBroadcast: 2023-07-06 02:04:49
 lastBroadcastEndTime: 2023-07-06 02:09:54
+```
+
+# Get Captions from Events
+
+Captions from a live event are available when the recording is ready. To get the captions from events, we will use the [media.list](https://developer.kaltura.com/api-docs/service/media/action/list) API call, with the filter set for `mediaTypeEqual = KalturaMediaType.LIVE_STREAM_FLASH` to select only live event entries, as well as `isRecordedEntryIdEmpty = KalturaNullableBoolean.FALSE_VALUE` to make sure we're getting only live entries with recordings.
+
+When we iterate over the live entries, we will use the [captionAsset.list](https://developer.kaltura.com/api-docs/service/captionAsset/action/list) to get a list of all the captions for the recording, and [captionAsset.getUrl](https://developer.kaltura.com/api-docs/service/captionAsset/action/getUrl) to get the contents for each captions file.
+
+```python
+entryFilter = KalturaLiveEntryFilter()
+entryFilter.mediaTypeEqual = KalturaMediaType.LIVE_STREAM_FLASH
+entryFilter.isRecordedEntryIdEmpty = KalturaNullableBoolean.FALSE_VALUE
+entryFilter.orderBy = KalturaLiveEntryOrderBy.CREATED_AT_DESC
+
+captionFilter = KalturaAssetFilter()
+
+result = client.media.list(entryFilter, KalturaFilterPager())
+for liveEntry in result.getObjects()[:5]:
+  print('\nLive Entry ID=',liveEntry.id,'Recording ID=',liveEntry.recordedEntryId)
+  captionFilter.entryIdEqual = liveEntry.recordedEntryId
+  captions = client.caption.captionAsset.list(captionFilter, KalturaFilterPager())
+  print('There are',captions.totalCount,'captions for this event')
+  for caption in captions.getObjects():
+    print('Language=',caption.label,',',caption.fileExt)
+    link = client.caption.captionAsset.getUrl(caption.id, 0)
+    print(link)
+```
+
+In my case, the result is:
+
+```
+Live Entry ID= 1_al1jskn2 Recording ID= 1_5clqx976
+There are 2 captions for this event
+Language= English , srt
+https://cfvod.kaltura.com/api_v3/index.php/service/caption_captionAsset/action/serve/captionAssetId/1_634tgh60/v/11/ks/djJ8NTI1MDc5Mnw8Pb0MNu6h4TKxbMV4QSsgYfVun0_OUolWQz_e9x3Zr5fWNL9wPlWmGrmqI8qpb8SvmRfzz-qojWknhhgQfxRVwKJEtjGJ-RNNO0rFo-zICNIXTdl-aEzDxJfAOtUWnJNwzSE4AJ4WexIU9NdDjtGEc_HP9uCBdFXLSKTniuYbWAAA4PdQXq_AfUwscOluECixqflrtpuBhyDGc_TbH5T3
+Language= French , srt
+https://cfvod.kaltura.com/api_v3/index.php/service/caption_captionAsset/action/serve/captionAssetId/1_hexraxk5/v/11/ks/djJ8NTI1MDc5Mnx-AkUJZq2o53RTY3Hi-mvmAdMNf6pn69GFn4po_T21QlbGElgxe6re6iNZtzm8VxlMM8hKcdEGSIHMG5F-1P2DFQsROCj5PQLLmvAHoYv4qqX-DCf_KpemxRj5j48qpPj6AxbHPy1u9FyIBRp2rwPP32-28MofYIszgdnoCcKIhK-PRueO4Hg2oyrmhgHKUO4ycgiOS0NeavbugS00IVfd
+
+Live Entry ID= 1_cppqjsge Recording ID= 1_34keid6e
+There are 3 captions for this event
+Language= English , srt
+https://cfvod.kaltura.com/api_v3/index.php/service/caption_captionAsset/action/serve/captionAssetId/1_jez7vpvj/v/11/ks/djJ8NTI1MDc5MnwMbKb6M7dtPYrE4uYu90eISnA4HXm9JXiUfHzer9X67Bz3ptdUmUf4aY6og-0uVewfjo_2bxGylD_Y2NhJNnJJ9zKQbxpThEe6rW9T4ieRyJGmDuZVX3CYVuPzGBlqwQmbet69pYkaZe2GPDXQshUlG_9iiZ86g44BUj_aDCgzplQ8reTUhxPvd9o1tUZe5LbitU99OqdrAHKG_LmkGNYB
+Language= Spanish , srt
+https://cfvod.kaltura.com/api_v3/index.php/service/caption_captionAsset/action/serve/captionAssetId/1_yzypf36x/v/11/ks/djJ8NTI1MDc5Mnw8oP-YIt0fIpUdMcDuLiYQofx6GdG-e0-VBVDE2tUpzfIa9dDTrZ8r04NY5KYGjFvqmNaApr2P1GBhRni4S376E7tXES43iDfWp8xF9MgNpKU2kGGjUrSWzLa8t8MwjhVIJ0pT8nd7Zk5Ta4fNRGubhGx0Mkxqgk07VlxWVxSOdWDCrZgVOF7i0OCqEV9cN8Nb0wkz3M7n-evm6idBpu8F
+Language= English , srt
+https://cfvod.kaltura.com/api_v3/index.php/service/caption_captionAsset/action/serve/captionAssetId/1_yi20fvtw/ks/djJ8NTI1MDc5MnxRMliNG3Bio9mHLBZt4-YrBAEAhRG9fAn3eMZ9nVYqMZZIkA2obnnwrr3Afxbgx29yMYh-UjDqEk7UAhlEviYxMwyvKzXdvrwBTqdKTfHR9ckhEYJ4InomrlSicCstS2JDx2h5AAWjiAxXQvHUGD5sSaxIaNXKbhtw8J47B2Puc1Y6nY9R-KHDaL1nn-WGoasGjSll1PWlbknAVsR_NUrs
 ```
