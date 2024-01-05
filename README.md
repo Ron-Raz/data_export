@@ -168,3 +168,73 @@ https://cfvod.kaltura.com/api_v3/index.php/service/caption_captionAsset/action/s
 Language= English , srt
 https://cfvod.kaltura.com/api_v3/index.php/service/caption_captionAsset/action/serve/captionAssetId/1_yi20fvtw/ks/djJ8NTI1MDc5MnxRMliNG3Bio9mHLBZt4-YrBAEAhRG9fAn3eMZ9nVYqMZZIkA2obnnwrr3Afxbgx29yMYh-UjDqEk7UAhlEviYxMwyvKzXdvrwBTqdKTfHR9ckhEYJ4InomrlSicCstS2JDx2h5AAWjiAxXQvHUGD5sSaxIaNXKbhtw8J47B2Puc1Y6nY9R-KHDaL1nn-WGoasGjSll1PWlbknAVsR_NUrs
 ```
+
+# Get Events List
+
+Webcasting events are media entries, with specific metadata and custom metadata that sets them apart. First, we will get the custom metadata profile ID for the Start and End times for the event using [metadataProfile.list](https://developer.kaltura.com/api-docs/service/metadataProfile/action/list), and then we will use the [media.list](https://developer.kaltura.com/api-docs/service/media/action/list) API call to get a list of the events, using a filter to indicate that the media entries should be of source type `LIVE_STREAM` and with `adminTagsLike = "kms-webcast-event"` to list only events that were created using Kaltura MediaSpace.
+
+```python
+# find metadataProfile ID which holds the StartTime and EndTime for the event 
+
+filter = KalturaMetadataProfileFilter()
+filter.systemNameEqual = "KMS_EVENTS3"
+pager = KalturaFilterPager()
+
+result = client.metadata.metadataProfile.list(filter, pager)
+metadataProfileId= result.getObjects()[0].id
+
+# set the metadata filter
+
+metadataFilter = KalturaMetadataFilter()
+metadataFilter.metadataProfileIdEqual = metadataProfileId
+
+# loop on events and print the details including the metadata
+
+eventColsToPrint=['id','name','description','userId','creatorId','tags','createdAt','updatedAt']
+
+filter = KalturaLiveEntryFilter()
+filter.orderBy = KalturaLiveEntryOrderBy.CREATED_AT_DESC
+filter.sourceTypeEqual = KalturaSourceType.LIVE_STREAM
+filter.adminTagsLike = "kms-webcast-event"
+
+result = client.media.list(filter, KalturaFilterPager())
+for event in result.getObjects()[:2]:
+  for col in eventColsToPrint:
+    print(col,':',getattr(event,col))
+
+  metadataFilter.objectIdEqual = event.id
+  metadataResults = client.metadata.metadata.list(metadataFilter, KalturaFilterPager())
+  print('startEndTimes :',metadataResults.getObjects()[0].xml.split('\n')[1],'\n')
+```
+
+In my case, the result is:
+
+```
+id : 1_k4delxma
+name : CEO Townhall
+description : Quarterly updates by the executive team.
+userId : ron.raz@kaltura.com
+creatorId : ron.raz@kaltura.com
+tags : internal, ceo, executive
+createdAt : 1704409105
+updatedAt : 1704420802
+startEndTimes : <metadata><StartTime>1704466800</StartTime><EndTime>1704470400</EndTime><Timezone>US/Eastern</Timezone></metadata> 
+
+id : 1_004xlzin
+name : HR updates
+description : Updates from Jane Smith. Chief People Officer
+userId : ron.raz@kaltura.com
+creatorId : ron.raz@kaltura.com
+tags : internal, hr dept
+createdAt : 1704408940
+updatedAt : 1704420672
+startEndTimes : <metadata><StartTime>1704405600</StartTime><EndTime>1704409200</EndTime><Timezone>US/Eastern</Timezone></metadata> 
+```
+
+Note, that I listed the two most recent events for demo purposes.
+You can use filters such as the following to filter by creation dates:
+```python
+filter.createdAtGreaterThanOrEqual = 1704408940
+filter.createdAtLessThanOrEqual = 1704420672
+```
+
